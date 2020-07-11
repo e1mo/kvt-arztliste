@@ -70,8 +70,9 @@ def extendDoctor(doc: dict):
     headpos = 0
 
     infoFieldMap = {
+        'Schwerpunkt:':         'focus',
         'Zusatzbezeichung:':    'additionalDesignation',
-        'Leistungsangebote:':    'serviceRange',
+        'Leistungsangebote:':   'serviceRange',
         'Sonderverträge:':      'specialContracts'
     }
     headMap = {
@@ -86,7 +87,7 @@ def extendDoctor(doc: dict):
     res = soup.find('div', class_='resultdetail')
     lists = res.find_all('ul')
     headings = res.find_all('h3')
-    infoFields = res.find_all(string=['Zusatzbezeichung:', 'Leistungsangebote:', 'Sonderverträge:'])
+    infoFields = res.find_all(string=['Schwerpunkt:', 'Zusatzbezeichung:', 'Leistungsangebote:', 'Sonderverträge:'])
 
     for field in infoFields:
         if field not in infoFieldMap:
@@ -144,6 +145,6 @@ def callSearchService(params, url='https://www.kv-thueringen.de/arztsuche'):
 
 if __name__ == '__main__':
     #doctors = getDoctors({'search': 'Tondt'})
-    doctors = getDoctors()
+    doctors = getDoctors({'search': 'Öhring'})
     with open('out/doctors.json', 'w') as fp:
         json.dump(doctors, fp)
