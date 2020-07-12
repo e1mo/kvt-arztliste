@@ -87,6 +87,12 @@ def extendDoctor(doc: dict):
     res = soup.find('div', class_='resultdetail')
     lists = res.find_all('ul')
     headings = res.find_all('h3')
+
+    if res.find('table') is not None:
+        times = res.find('table').find('tbody')
+    else:
+        times = None
+
     infoFields = res.find_all(string=['Schwerpunkt:', 'Zusatzbezeichung:', 'Leistungsangebote:', 'Sonderverträge:'])
 
     for field in infoFields:
@@ -120,6 +126,23 @@ def extendDoctor(doc: dict):
 
         headpos += 1
 
+    dayTimes = {}
+
+    if times is not None:
+        times = str(times.contents[0]).split('<tr>')
+        del times[:1] # the first one will be empty
+        for day in [day.replace('<td></td>', '').replace('</tr>','') for day in times]:
+            day = BeautifulSoup(day, 'html.parser')
+            hours = day.find_all('td')
+            dayName = hours[0].string
+            del hours[:1]
+            dayTimes[dayName] = {}
+            timesCount = round(len(hours) / 2)
+            for i in range(timesCount):
+                dayTimes[dayName][hours[i*2].string] = hours[i*2+1].string
+
+
+    doc['times'] = dayTimes
     return doc
 
     
@@ -145,6 +168,7 @@ def callSearchService(params, url='https://www.kv-thueringen.de/arztsuche'):
 
 if __name__ == '__main__':
     #doctors = getDoctors({'search': 'Tondt'})
-    doctors = getDoctors({'search': 'Öhring'})
+    doctors = getDoctors()
+
     with open('out/doctors.json', 'w') as fp:
         json.dump(doctors, fp)
