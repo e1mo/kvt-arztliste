@@ -1,0 +1,85 @@
+digraph g {
+	graph [
+		rankdir = "LR"
+	]
+
+	doctor [
+		label = "doctor | <id>id | name | <est>establishment | field | address | telephone | url"
+		shape=record
+		rank=source
+	]
+
+	establishment [
+		label = "establishment | <name>name | address"
+		shape=record
+	]
+
+	service [
+		label = "service | <num>num | name"
+		shape=record
+	]
+
+	focus [
+		label = "focus | <num>num | name"
+		shape = record
+	]
+
+	designation [
+		label = "designation | <num>num | name"
+		shape = record
+	]
+
+	specialContract [
+		label = "specialContract | <num>num | name"
+		shape = record
+	]
+
+	expertise [
+		label = "expertise | <num>num | name"
+		shape = record
+	]
+
+	doctor_time [
+		label = "doctor_time | <did>doctor_id | day | start_at | end_at | description"
+		shape = record
+	]
+
+	doctor_service [
+		label = "doctor_service |  <did>doctor_id | <snum>service_num "
+		shape = record
+	]
+
+	doctor_focus [
+		label = "doctor_focus | <did>doctor_id | <snum>focus_num "
+		shape = record
+	]
+
+	doctor_designation [
+		label = "doctor_designation | <did>doctor_id | <snum>designation_num "
+		shape = record
+	]
+
+	doctor_contract [
+		label = "doctor_service | <did>doctor_id | <snum>contract_num "
+		shape = record
+	]
+
+	doctor_expertise [
+		label = "doctor_expertise | <did>doctor_id | <snum>expertise_num"
+		shape = record
+	]
+
+establishment : "name" -> doctor : "est" 
+doctor : "est" -> establishment : "name"
+doctor_service : "did" -> doctor : "id" 
+doctor_service : "snum" -> service : "num" 
+doctor_focus : "did" -> doctor : "id" 
+doctor_focus : "snum" -> focus : "num" 
+doctor_designation : "did" -> doctor : "id" 
+doctor_designation : "snum" -> designation : "num" 
+doctor_contract : "did" -> doctor : "id" 
+doctor_contract : "snum" -> specialContract : "num" 
+doctor_time : "did" -> doctor : "id"
+doctor_expertise : "did" -> doctor : "id"
+doctor_expertise : "snum" -> expertise : "num"
+}
