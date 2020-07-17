@@ -14,6 +14,13 @@ rows['designation'] = {}
 rows['service'] = {}
 rows['contract'] = {}
 
+inserts = {}
+inserts['service'] = []
+inserts['designation'] = []
+inserts['focus'] = []
+inserts['contract'] = []
+inserts['expertise'] = []
+
 db_host = None
 db_user = None
 db_name = None
@@ -77,7 +84,7 @@ try:
     )
 
     cursor = db.cursor()
-    query = """INSERT INTO {} (num,name) VALUES (%s,%s) ON CONFLICT (num) DO UPDATE SET name=%s"""
+    query = """INSERT INTO {} (num,name) VALUES {} ON CONFLICT (num) DO NOTHING"""
 
     with open('out/selFachgebiet.csv', 'r') as f:
         reader = csv.DictReader(f)
@@ -106,19 +113,17 @@ try:
 
     if not skip_options:
         for key,items in rows.items():
+            tmpIn = ()
             for name,num in items.items():
-                cursor.execute(query.format(key), (num, name, name))
+                tmpIn = tmpIn + (num, name)
+
+            cursor.execute(query.format(key, ','.join(['(%s,%s)'] * len(items))),tmpIn)
 
     with open('out/doctors.json') as f:
         query = """INSERT INTO doctor ({}) VALUES ({}) ON CONFLICT DO NOTHING RETURNING id"""
         doctors = json.load(f)
+
         for doc in doctors:
-            docParams = {}
-            docParams['service'] = []
-            docParams['designation'] = []
-            docParams['focus'] = []
-            docParams['contract'] = []
-            docParams['expertise'] = []
             fields = []
             normalParams = [
                 'name', 'telephone', 'url', 'address'
@@ -128,31 +133,11 @@ try:
                 if param in doc:
                     fields.append(param)
 
-            if 'serviceRange' in doc:
-                for service in doc['serviceRange']:
-                    docParams['service'].append(rows['service'][service])
-
-            if 'additionalDesignation' in doc:
-                for designation in doc['additionalDesignation']:
-                    docParams['designation'].append(rows['designation'][designation])
-
-            if 'specialContracts' in doc:
-                for contract in doc['specialContracts']:
-                    docParams['contract'].append(rows['contract'][contract])
-
-            if 'focus' in doc:
-                for focus in doc['focus']:
-                    docParams['focus'].append(rows['focus'][focus])
-
-            if 'field' in doc:
-                docParams['expertise'].append(rows['expertise'][doc['field']])
-
             data = ()
             for field in fields:
                 data = data + (doc[field],)
 
             qry = query.format(','.join(fields), ','.join(['%s'] * len(fields)))
-            print(qry, data)
             cursor.execute(qry,data)
             docid = cursor.fetchone()
             if docid is None:
@@ -161,17 +146,35 @@ try:
 
             docid = int(docid[0])
 
-            pquery = """INSERT INTO doctor_{0} (doctor_id, {0}_num) VALUES {1} ON CONFLICT DO NOTHING"""
+            if 'serviceRange' in doc:
+                for service in doc['serviceRange']:
+                    inserts['service'].append((docid, rows['service'][service]))
 
-            for param,items in docParams.items():
-                if len(items) > 0:
-                    qry = pquery.format(param, ','.join(['(%s,%s)'] * len(items)))
-                    data = ()
-                    for item in items:
-                        data = data + (docid,item)
-        
-                    print(cursor.mogrify(qry,data))
-                    cursor.execute(qry,data)
+            if 'additionalDesignation' in doc:
+                for designation in doc['additionalDesignation']:
+                    inserts['designation'].append((docid, rows['designation'][designation]))
+
+            if 'specialContracts' in doc:
+                for contract in doc['specialContracts']:
+                    inserts['contract'].append((docid, rows['contract'][contract]))
+
+            if 'focus' in doc:
+                for focus in doc['focus']:
+                    inserts['focus'].append((docid, rows['focus'][focus]))
+
+            if 'field' in doc:
+                inserts['expertise'].append((docid, rows['expertise'][doc['field']]))
+
+        query = """INSERT INTO doctor_{0} (doctor_id, {0}_num) VALUES {1} ON CONFLICT DO NOTHING"""
+
+        for param,items in inserts.items():
+            if len(items) > 0:
+                qry = query.format(param, ','.join(['(%s,%s)'] * len(items)))
+                data = ()
+                for item in items:
+                    data = data + item
+
+                cursor.execute(qry,data)
 
     db.commit()
 

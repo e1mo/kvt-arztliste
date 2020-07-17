@@ -34,7 +34,6 @@ CREATE TABLE doctor (
 	id serial PRIMARY KEY
 	, name varchar(255)
 	, establishment_id integer REFERENCES establishment(id)
-	, field varchar(256)
 	, address varchar(255)
 	, telephone varchar(32)
 	, url varchar(512)
