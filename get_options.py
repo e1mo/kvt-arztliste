@@ -17,8 +17,7 @@ def getOptionsFromSelect(id):
         # there are two numbers within the value field
         # They are sperated by a ',', this looks like this: option value="44,86"
         # We split the value and itterate over it to remove that annoying ,
-        for value in option.get('value').split(','):
-            addDesignations[int(value)] = option.contents
+        addDesignations[int(option.get('value').split(',')[0])] = option.contents
 
     return dict(sorted(addDesignations.items(), key = lambda kv:kv[0]))
    

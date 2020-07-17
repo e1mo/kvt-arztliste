@@ -168,7 +168,7 @@ def callSearchService(params, url='https://www.kv-thueringen.de/arztsuche'):
 
 if __name__ == '__main__':
     #doctors = getDoctors({'search': 'Tondt'})
-    doctors = getDoctors()
+    doctors = getDoctors({'place': '99099'})
 
     with open('out/doctors.json', 'w') as fp:
         json.dump(doctors, fp)
