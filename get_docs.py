@@ -46,7 +46,14 @@ def extractDoctors(soup: BeautifulSoup):
 
     rawDoctors = soup.find(
         'ul', class_='results'
-    ).find_all('li')
+    )
+
+    if rawDoctors is None:
+        # If there are no doctors in the result
+        # just return an empty listing
+        return []
+
+    rawDoctors = rawDoctors.find_all('li')
 
     for doctor in rawDoctors:
         doc = {}
