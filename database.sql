@@ -65,8 +65,7 @@ CREATE TABLE doctor_contract (
 );
 
 CREATE TABLE doctor_time (
-	id serial PRIMARY KEY
-	, doctor_id integer REFERENCES doctor(id) NOT NULL NOT NULL
+	doctor_id integer REFERENCES doctor(id) NOT NULL NOT NULL
 	, day varchar(10)
 	, start_at time NOT NULL
 	, end_at time NOT NULL

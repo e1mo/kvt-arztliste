@@ -120,61 +120,71 @@ try:
             cursor.execute(query.format(key, ','.join(['(%s,%s)'] * len(items))),tmpIn)
 
     with open('out/doctors.json') as f:
-        query = """INSERT INTO doctor ({}) VALUES ({}) ON CONFLICT DO NOTHING RETURNING id"""
+        query = """INSERT INTO doctor ({}) VALUES {} ON CONFLICT DO NOTHING RETURNING id"""
+        timesQuery = """INSERT INTO doctor_time (doctor_id,day,start_at,end_at,description) VALUES {} ON CONFLICT DO NOTHING"""
         doctors = json.load(f)
+        docIns = ()
+        docTimes = ()
+        normalParams = [
+            'name', 'telephone', 'url', 'address'
+        ]
 
-        for doc in doctors:
+
+        for index,doc in enumerate(doctors):
             fields = []
-            normalParams = [
-                'name', 'telephone', 'url', 'address'
-            ]
-
             for param in normalParams:
                 if param in doc:
-                    fields.append(param)
+                    docIns = docIns + (doc[param],)
+                else:
+                    docIns = docIns + (None,)
 
-            data = ()
-            for field in fields:
-                data = data + (doc[field],)
+        qry = query.format(','.join(normalParams), ','.join(['(' + ','.join(['%s'] * len(normalParams)) + ')'] * len(doctors)))
+        cursor.execute(qry, docIns)
+        ids = cursor.fetchall()
+        
 
-            qry = query.format(','.join(fields), ','.join(['%s'] * len(fields)))
-            cursor.execute(qry,data)
-            docid = cursor.fetchone()
-            if docid is None:
-                cursor.execute("""SELECT id FROM doctor WHERE name = %s AND address = %s AND url = %s""", (doc['name'], doc['address'], doc['url']))
-                docid = cursor.fetchone()
+        if len(ids) > 0:
+            for index,doc in enumerate(doctors):
+                docid = ids[index][0]
+                if 'serviceRange' in doc:
+                    for service in doc['serviceRange']:
+                        inserts['service'].append((docid, rows['service'][service]))
 
-            docid = int(docid[0])
+                if 'additionalDesignation' in doc:
+                    for designation in doc['additionalDesignation']:
+                        inserts['designation'].append((docid, rows['designation'][designation]))
 
-            if 'serviceRange' in doc:
-                for service in doc['serviceRange']:
-                    inserts['service'].append((docid, rows['service'][service]))
+                if 'specialContracts' in doc:
+                    for contract in doc['specialContracts']:
+                        inserts['contract'].append((docid, rows['contract'][contract]))
 
-            if 'additionalDesignation' in doc:
-                for designation in doc['additionalDesignation']:
-                    inserts['designation'].append((docid, rows['designation'][designation]))
+                if 'focus' in doc:
+                    for focus in doc['focus']:
+                        inserts['focus'].append((docid, rows['focus'][focus]))
 
-            if 'specialContracts' in doc:
-                for contract in doc['specialContracts']:
-                    inserts['contract'].append((docid, rows['contract'][contract]))
+                if 'field' in doc:
+                    inserts['expertise'].append((docid, rows['expertise'][doc['field']]))
 
-            if 'focus' in doc:
-                for focus in doc['focus']:
-                    inserts['focus'].append((docid, rows['focus'][focus]))
+                if 'times' in doc:
+                    for day,times in doc['times'].items():
+                        for time,description in times.items():
+                            _time = time.replace(' Uhr', '').split(' - ')
+                            add = (docid,day,_time[0],_time[1],description)
+                            docTimes = docTimes + add
 
-            if 'field' in doc:
-                inserts['expertise'].append((docid, rows['expertise'][doc['field']]))
+            query = """INSERT INTO doctor_{0} (doctor_id, {0}_num) VALUES {1} ON CONFLICT DO NOTHING"""
 
-        query = """INSERT INTO doctor_{0} (doctor_id, {0}_num) VALUES {1} ON CONFLICT DO NOTHING"""
+            for param,items in inserts.items():
+                if len(items) > 0:
+                    qry = query.format(param, ','.join(['(%s,%s)'] * len(items)))
+                    data = ()
+                    for item in items:
+                        data = data + item
 
-        for param,items in inserts.items():
-            if len(items) > 0:
-                qry = query.format(param, ','.join(['(%s,%s)'] * len(items)))
-                data = ()
-                for item in items:
-                    data = data + item
+                    cursor.execute(qry,data)
 
-                cursor.execute(qry,data)
+            qry = timesQuery.format(','.join(['(%s,%s,%s,%s,%s)'] * (int(len(docTimes) / 5))))
+            cursor.execute(qry, docTimes)
 
     db.commit()
 
