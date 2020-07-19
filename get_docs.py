@@ -167,8 +167,11 @@ def callSearchService(params, url='https://www.kv-thueringen.de/arztsuche'):
     return requests.post(url,data).text
 
 if __name__ == '__main__':
-    #doctors = getDoctors({'search': 'Tondt'})
-    doctors = getDoctors()
+    doctors = []
+    with open('plz_thueringen.csv', 'r') as f:
+        for plz in [l.rstrip() for l in f]:
+            print(plz)
+            doctors.append(getDoctors({'place': plz}))
 
     with open('out/doctors.json', 'w') as fp:
         json.dump(doctors, fp)
