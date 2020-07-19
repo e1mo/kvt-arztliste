@@ -37,6 +37,7 @@ CREATE TABLE doctor (
 	, address varchar(255)
 	, telephone varchar(32)
 	, url varchar(512)
+	, coordinates point
 	, UNIQUE (name,address,url)
 );
 

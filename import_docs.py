@@ -138,6 +138,13 @@ try:
                 else:
                     docIns = docIns + (None,)
 
+            if 'coordinates' in doc:
+                docIns += ('({},{})'.format(doc['coordinates']['lat'],doc['coordinates']['lon']),)
+            else:
+                docIns += '(0,0)'
+
+        normalParams.append('coordinates')
+
         qry = query.format(','.join(normalParams), ','.join(['(' + ','.join(['%s'] * len(normalParams)) + ')'] * len(doctors)))
         cursor.execute(qry, docIns)
         ids = cursor.fetchall()
