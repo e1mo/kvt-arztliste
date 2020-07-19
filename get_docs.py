@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 from pathlib import Path,PurePath
+import re
 import json
 import csv
 import requests
@@ -73,6 +74,7 @@ def extractDoctors(soup: BeautifulSoup):
     return doctors
 
 def extendDoctor(doc: dict):
+    latLonRe = re.compile('var client = \[\{"lat":"(\d*.\d*)", "lon":"(\d*.\d*)"')
     listCounter = 0
     headpos = 0
 
@@ -91,9 +93,14 @@ def extendDoctor(doc: dict):
 
     r = requests.get(doc['url'])
     soup = BeautifulSoup(r.text, features='html.parser')
-    res = soup.find('div', class_='resultdetail')
+    client = soup.find('div', class_='tx-t3kvclient')
+    res = client.find('div', class_='resultdetail')
     lists = res.find_all('ul')
+    script = client.find('script').string
+    latLon = latLonRe.search(script)
     headings = res.find_all('h3')
+
+    doc['coordinates'] = {'lat': float(latLon.group(1)), 'lon': float(latLon.group(2))}
 
     if res.find('table') is not None:
         times = res.find('table').find('tbody')
@@ -178,7 +185,7 @@ if __name__ == '__main__':
     with open('plz_thueringen.csv', 'r') as f:
         for plz in [l.rstrip() for l in f]:
             print(plz)
-            doctors.append(getDoctors({'place': plz}))
+            doctors.extend(getDoctors({'place': plz}))
 
     with open('out/doctors.json', 'w') as fp:
         json.dump(doctors, fp)
